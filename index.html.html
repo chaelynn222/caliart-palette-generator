@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caliart Palette Generator v7</title>
+<style>
+  :root {
+    --bg:#f7f5f1; --panel:#fff; --line:#e8e1d8; --text:#24262b; --sub:#66707c; --accent:#6f57ff;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--text); -webkit-text-size-adjust:100%; }
+  .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px; }
+  h1,h2,h3 { margin:0 0 10px; }
+  .lead { color:var(--sub); margin:0 0 12px; }
+  .note { padding:12px 14px; border-radius:12px; background:#fff8e8; border:1px solid #f0dfaa; color:#6d5a23; margin-bottom:16px; }
+  .controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; align-items:end; }
+  label { display:block; font-size:.9rem; font-weight:700; margin-bottom:6px; }
+  select, button, input { width:100%; padding:11px 12px; border-radius:12px; border:1px solid #d9d9e2; background:#fff; font-size:16px; }
+  button { cursor:pointer; font-weight:700; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.secondary { background:#fff; color:var(--text); }
+  .toolbar { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+  .status { color:var(--sub); font-size:.92rem; margin-top:10px; }
+  .palette, .blend-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px; }
+  .blend-grid { grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+  .card { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; }
+  .swatch { height:120px; }
+  .meta { padding:10px 12px 12px; }
+  .code-row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .code { font-weight:800; letter-spacing:.02em; }
+  .tiny { color:var(--sub); font-size:.86rem; margin-top:4px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip { font-size:.72rem; padding:4px 8px; border-radius:999px; background:#f1effd; }
+  .mini-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(106px,1fr)); gap:10px; max-height:420px; overflow:auto; }
+  .mini .swatch { height:60px; }
+  .mini .meta { padding:8px; }
+  .lockbtn { border:1px solid #d8d2ff; background:#f6f3ff; color:#4f40b7; padding:6px 9px; border-radius:10px; font-size:.8rem; width:auto; }
+  .locked { outline:3px solid #a38cff; }
+  .trio { border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#fff; }
+  .trio-swatches { display:grid; grid-template-columns:repeat(3,1fr); }
+  .trio-swatch { height:94px; position:relative; }
+  .trio-label { position:absolute; left:8px; bottom:8px; background:rgba(255,255,255,.82); padding:3px 6px; border-radius:8px; font-size:.8rem; font-weight:700; }
+  .trio-meta { padding:12px; }
+  .sectionhead { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+  .footer-note { color:var(--sub); font-size:.88rem; }
+  @media (max-width: 700px) {
+    .wrap { padding:12px; }
+    .palette { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .mini-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  }
+
+  .favorites-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+  .favorite-card { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; }
+  .favorite-swatches { display:grid; grid-template-columns:repeat(auto-fit,minmax(36px,1fr)); gap:0; }
+  .favorite-swatch { height:44px; }
+  .favorite-meta { padding:12px; }
+  .smallbtn { padding:8px 10px; border-radius:10px; font-size:.84rem; border:1px solid #ddd; background:#fff; color:var(--text); width:auto; }
+  .inline-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Caliart Palette Generator v7</h1>
+  <p class="lead">v5 layout, now with more accurate sampled swatches, automatic 3-marker blend trios, a skin tone generator, and saved favorite palettes.</p>
+
+  <div class="note">
+    This version keeps the v5 look you liked, plus the three upgrades you wanted: more accurate sampled swatches, a skin tone generator, and saved favorite palettes.
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <div>
+        <label for="size">Palette size</label>
+        <select id="size">
+          <option value="3">3 colors</option>
+          <option value="4">4 colors</option>
+          <option value="5" selected>5 colors</option>
+          <option value="6">6 colors</option>
+          <option value="8">8 colors</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="mode">Palette mode</label>
+        <select id="mode">
+          <option value="random">Random</option>
+          <option value="soft">Soft / pastel</option>
+          <option value="earthy">Earthy</option>
+          <option value="bright">Bright</option>
+          <option value="skin">Skin / portrait</option>
+          <option value="cool">Cool tones</option>
+          <option value="warm">Warm tones</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="harmony">Harmony</label>
+        <select id="harmony">
+          <option value="any">Any</option>
+          <option value="analogous">Analogous</option>
+          <option value="complementary">Complementary</option>
+          <option value="triadic">Triadic</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="family">Family filter</label>
+        <select id="family">
+          <option value="all">All families</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="value">Value filter</label>
+        <select id="value">
+          <option value="all">Any value</option>
+          <option value="light">Light</option>
+          <option value="mid">Mid</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+
+      <div>
+        <label>&nbsp;</label>
+        <button class="primary" id="generateBtn" type="button">Generate palette</button>
+      </div>
+    </div>
+    <div class="status" id="status">Ready.</div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionhead">
+      <h2>Generated palette</h2>
+      <div class="footer-note">Tap Lock on any color to keep it in the next generation.</div>
+    </div>
+    <div class="palette" id="palette"></div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <button class="secondary" id="copyCodesBtn" type="button">Copy palette codes</button>
+      <button class="secondary" id="copyFullBtn" type="button">Copy codes + hex</button>
+      <button class="secondary" id="clearLocksBtn" type="button">Clear locks</button>
+      <button class="secondary" id="downloadTxtBtn" type="button">Download palette as text</button>
+      <button class="secondary" id="blendBtn" type="button">Generate blend trios</button>
+      <button class="secondary" id="skinBtn" type="button">Generate skin tone set</button>
+      <button class="secondary" id="savePaletteBtn" type="button">Save current palette</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionhead">
+      <h2>Automatic 3-marker blend sets</h2>
+      <div class="footer-note">Each suggestion aims for a light → mid → shadow flow.</div>
+    </div>
+    <div class="blend-grid" id="blendGrid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionhead">
+      <h2>Saved favorite palettes</h2>
+      <div class="footer-note">Saved in your browser on this device.</div>
+    </div>
+    <div class="inline-actions">
+      <button class="secondary smallbtn" id="saveCurrentBtn" type="button">Save current palette</button>
+      <button class="secondary smallbtn" id="clearFavoritesBtn" type="button">Clear all favorites</button>
+    </div>
+    <div style="height:12px"></div>
+    <div class="favorites-grid" id="favoritesGrid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionhead">
+      <h2>Skin tone generator</h2>
+      <div class="footer-note">Builds a portrait-friendly set with highlight, base, blush, shadow, and deep shadow.</div>
+    </div>
+    <div class="controls">
+      <div>
+        <label for="skinDepth">Depth</label>
+        <select id="skinDepth">
+          <option value="fair">Fair</option>
+          <option value="light">Light</option>
+          <option value="medium" selected>Medium</option>
+          <option value="tan">Tan</option>
+          <option value="deep">Deep</option>
+        </select>
+      </div>
+      <div>
+        <label for="skinUndertone">Undertone</label>
+        <select id="skinUndertone">
+          <option value="warm" selected>Warm</option>
+          <option value="neutral">Neutral</option>
+          <option value="cool">Cool</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="primary" id="generateSkinBtn" type="button">Generate skin tone set</button>
+      </div>
+    </div>
+    <div style="height:12px"></div>
+    <div class="palette" id="skinPalette"></div>
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <div>
+        <label for="search">Search marker code</label>
+        <input id="search" type="text" placeholder="Try B205 or Y703">
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="secondary" id="clearBtn" type="button">Clear search</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Full marker library</h2>
+    <div class="mini-grid" id="library"></div>
+  </div>
+</div>
+
+<script>
+const MARKERS = [{"code": "B002", "name": "B002", "hex": "#9BD1FD", "family": "blue", "value": "light", "tags": ["bright", "cool"], "hue": 207, "lightness": 0.8, "prefix": "B"}, {"code": "B003", "name": "B003", "hex": "#86AEFB", "family": "blue", "value": "mid", "tags": ["bright", "cool"], "hue": 219, "lightness": 0.755, "prefix": "B"}, {"code": "B016", "name": "B016", "hex": "#6A93F2", "family": "blue", "value": "mid", "tags": ["bright", "cool"], "hue": 222, "lightness": 0.682, "prefix": "B"}, {"code": "B025", "name": "B025", "hex": "#89A1D6", "family": "blue", "value": "mid", "tags": ["cool"], "hue": 221, "lightness": 0.688, "prefix": "B"}, {"code": "B027", "name": "B027", "hex": "#6E8BC5", "family": "blue", "value": "mid", "tags": ["cool"], "hue": 220, "lightness": 0.602, "prefix": "B"}, {"code": "B028", "name": "B028", "hex": "#6E84B4", "family": "blue", "value": "mid", "tags": ["cool"], "hue": 221, "lightness": 0.569, "prefix": "B"}, {"code": "B114", "name": "B114", "hex": "#71A4E9", "family": "blue", "value": "mid", "tags": ["bright", "cool"], "hue": 214, "lightness": 0.678, "prefix": "B"}, {"code": "B117", "name": "B117", "hex": "#507BBA", "family": "blue", "value": "dark", "tags": ["cool"], "hue": 216, "lightness": 0.522, "prefix": "B"}, {"code": "B118", "name": "B118", "hex": "#4F61EE", "family": "blue", "value": "mid", "tags": ["bright", "cool"], "hue": 233, "lightness": 0.622, "prefix": "B"}, {"code": "B201", "name": "B201", "hex": "#93F3FE", "family": "teal", "value": "light", "tags": ["bright", "cool"], "hue": 186, "lightness": 0.786, "prefix": "B"}, {"code": "B203", "name": "B203", "hex": "#56DBFE", "family": "cyan", "value": "mid", "tags": ["bright", "cool"], "hue": 192, "lightness": 0.667, "prefix": "B"}, {"code": "B204", "name": "B204", "hex": "#26C5FD", "family": "cyan", "value": "mid", "tags": ["bright", "cool"], "hue": 196, "lightness": 0.571, "prefix": "B"}, {"code": "B205", "name": "B205", "hex": "#0495FD", "family": "blue", "value": "dark", "tags": ["bright", "cool"], "hue": 205, "lightness": 0.504, "prefix": "B"}, {"code": "B222", "name": "B222", "hex": "#6F9ACE", "family": "blue", "value": "mid", "tags": ["cool"], "hue": 213, "lightness": 0.622, "prefix": "B"}, {"code": "B225", "name": "B225", "hex": "#6C9AB6", "family": "cyan", "value": "mid", "tags": ["cool"], "hue": 203, "lightness": 0.569, "prefix": "B"}, {"code": "B227", "name": "B227", "hex": "#5692CF", "family": "blue", "value": "mid", "tags": ["cool"], "hue": 210, "lightness": 0.575, "prefix": "B"}, {"code": "B234", "name": "B234", "hex": "#6F94B6", "family": "blue", "value": "mid", "tags": ["cool"], "hue": 209, "lightness": 0.575, "prefix": "B"}, {"code": "B258", "name": "B258", "hex": "#687685", "family": "blue", "value": "dark", "tags": ["cool"], "hue": 211, "lightness": 0.465, "prefix": "B"}, {"code": "B313", "name": "B313", "hex": "#57C6F2", "family": "cyan", "value": "mid", "tags": ["bright", "cool"], "hue": 197, "lightness": 0.645, "prefix": "B"}, {"code": "B323", "name": "B323", "hex": "#5F9CAF", "family": "cyan", "value": "dark", "tags": ["cool"], "hue": 194, "lightness": 0.529, "prefix": "B"}, {"code": "B411", "name": "B411", "hex": "#BAD6D3", "family": "teal", "value": "light", "tags": ["cool"], "hue": 174, "lightness": 0.784, "prefix": "B"}, {"code": "B502", "name": "B502", "hex": "#88F2FD", "family": "teal", "value": "mid", "tags": ["bright", "cool"], "hue": 186, "lightness": 0.763, "prefix": "B"}, {"code": "B522", "name": "B522", "hex": "#78BFC3", "family": "teal", "value": "mid", "tags": ["cool"], "hue": 183, "lightness": 0.618, "prefix": "B"}, {"code": "B635", "name": "B635", "hex": "#4E7D84", "family": "teal", "value": "dark", "tags": ["cool"], "hue": 188, "lightness": 0.412, "prefix": "B"}, {"code": "B714", "name": "B714", "hex": "#2DCBCC", "family": "teal", "value": "dark", "tags": ["bright", "cool"], "hue": 180, "lightness": 0.488, "prefix": "B"}, {"code": "B723", "name": "B723", "hex": "#4FA49E", "family": "teal", "value": "dark", "tags": ["cool"], "hue": 176, "lightness": 0.476, "prefix": "B"}, {"code": "B754", "name": "B754", "hex": "#4C6E6A", "family": "teal", "value": "dark", "tags": ["cool"], "hue": 173, "lightness": 0.365, "prefix": "B"}, {"code": "B802", "name": "B802", "hex": "#84EDE8", "family": "teal", "value": "mid", "tags": ["bright", "cool"], "hue": 177, "lightness": 0.724, "prefix": "B"}, {"code": "B815", "name": "B815", "hex": "#49CADA", "family": "teal", "value": "mid", "tags": ["bright", "cool"], "hue": 187, "lightness": 0.571, "prefix": "B"}, {"code": "B825", "name": "B825", "hex": "#60CED5", "family": "teal", "value": "mid", "tags": ["cool"], "hue": 184, "lightness": 0.606, "prefix": "B"}, {"code": "B832", "name": "B832", "hex": "#80C0BE", "family": "teal", "value": "mid", "tags": ["cool"], "hue": 178, "lightness": 0.627, "prefix": "B"}, {"code": "B922", "name": "B922", "hex": "#72CABD", "family": "teal", "value": "mid", "tags": ["cool"], "hue": 171, "lightness": 0.62, "prefix": "B"}, {"code": "B945", "name": "B945", "hex": "#668A84", "family": "teal", "value": "dark", "tags": ["cool"], "hue": 170, "lightness": 0.471, "prefix": "B"}, {"code": "B962", "name": "B962", "hex": "#686B6B", "family": "teal", "value": "dark", "tags": ["cool"], "hue": 180, "lightness": 0.414, "prefix": "B"}, {"code": "BG01", "name": "BG01", "hex": "#ECFDFE", "family": "gray", "value": "light", "tags": ["bright", "muted", "pastel"], "hue": 183, "lightness": 0.961, "prefix": "BG"}, {"code": "BG03", "name": "BG03", "hex": "#B6D7F2", "family": "gray", "value": "light", "tags": ["bright", "muted", "pastel"], "hue": 207, "lightness": 0.831, "prefix": "BG"}, {"code": "BG05", "name": "BG05", "hex": "#7995B6", "family": "gray", "value": "mid", "tags": ["muted"], "hue": 212, "lightness": 0.594, "prefix": "BG"}, {"code": "BG07", "name": "BG07", "hex": "#5F6C78", "family": "gray", "value": "dark", "tags": ["muted"], "hue": 209, "lightness": 0.422, "prefix": "BG"}, {"code": "BG09", "name": "BG09", "hex": "#545D69", "family": "gray", "value": "dark", "tags": ["muted"], "hue": 214, "lightness": 0.371, "prefix": "BG"}, {"code": "CG02", "name": "CG02", "hex": "#C2D6F3", "family": "gray", "value": "light", "tags": ["bright", "muted", "pastel"], "hue": 216, "lightness": 0.857, "prefix": "CG"}, {"code": "CGII00", "name": "CGII00", "hex": "#FFFFFF", "family": "gray", "value": "light", "tags": ["muted", "pastel"], "hue": 0, "lightness": 1.0, "prefix": "CGII"}, {"code": "CGII01", "name": "CGII01", "hex": "#FBFBFB", "family": "gray", "value": "light", "tags": ["muted", "pastel"], "hue": 0, "lightness": 0.984, "prefix": "CGII"}, {"code": "CGII02", "name": "CGII02", "hex": "#FAFAFA", "family": "gray", "value": "light", "tags": ["muted", "pastel"], "hue": 0, "lightness": 0.98, "prefix": "CGII"}, {"code": "CGII03", "name": "CGII03", "hex": "#F7F5F7", "family": "gray", "value": "light", "tags": ["muted", "pastel"], "hue": 300, "lightness": 0.965, "prefix": "CGII"}, {"code": "CGII04", "name": "CGII04", "hex": "#D7D9DE", "family": "gray", "value": "light", "tags": ["muted", "pastel"], "hue": 223, "lightness": 0.857, "prefix": "CGII"}, {"code": "CGII05", "name": "CGII05", "hex": "#B8BABB", "family": "gray", "value": "mid", "tags": ["muted"], "hue": 200, "lightness": 0.727, "prefix": "CGII"}, {"code": "CGII06", "name": "CGII06", "hex": "#93969C", "family": "gray", "value": "mid", "tags": ["muted"], "hue": 220, "lightness": 0.594, "prefix": "CGII"}, {"code": "CGII07", "name": "CGII07", "hex": "#8B959D", "family": "gray", "value": "mid", "tags": ["muted"], "hue": 207, "lightness": 0.58, "prefix": "CGII"}, {"code": "CGII08", "name": "CGII08", "hex": "#7A818A", "family": "gray", "value": "dark", "tags": ["muted"], "hue": 214, "lightness": 0.51, "prefix": "CGII"}, {"code": "CGII09", "name": "CGII09", "hex": "#666970", "family": "gray", "value": "dark", "tags": ["muted"], "hue": 222, "lightness": 0.42, "prefix": "CGII"}, {"code": "G001", "name": "G001", "hex": "#99FCE0", "family": "green", "value": "light", "tags": ["bright", "fresh"], "hue": 163, "lightness": 0.794, "prefix": "G"}, {"code": "G012", "name": "G012", "hex": "#88D0B1", "family": "green", "value": "mid", "tags": ["earthy", "fresh"], "hue": 154, "lightness": 0.675, "prefix": "G"}, {"code": "G025", "name": "G025", "hex": "#3E9482", "family": "green", "value": "dark", "tags": ["earthy", "fresh"], "hue": 167, "lightness": 0.412, "prefix": "G"}, {"code": "G115", "name": "G115", "hex": "#27B2A6", "family": "green", "value": "dark", "tags": ["bright", "earthy", "fresh"], "hue": 175, "lightness": 0.425, "prefix": "G"}, {"code": "G122", "name": "G122", "hex": "#66A298", "family": "green", "value": "dark", "tags": ["earthy"], "hue": 170, "lightness": 0.518, "prefix": "G"}, {"code": "G127", "name": "G127", "hex": "#219479", "family": "green", "value": "dark", "tags": ["bright", "earthy", "fresh"], "hue": 166, "lightness": 0.355, "prefix": "G"}, {"code": "G135", "name": "G135", "hex": "#49937B", "family": "green", "value": "dark", "tags": ["earthy", "fresh"], "hue": 161, "lightness": 0.431, "prefix": "G"}, {"code": "G201", "name": "G201", "hex": "#D8FDD6", "family": "green", "value": "light", "tags": ["bright", "fresh", "pastel"], "hue": 117, "lightness": 0.916, "prefix": "G"}, {"code": "G213", "name": "G213", "hex": "#76E2A7", "family": "green", "value": "mid", "tags": ["bright", "earthy", "fresh"], "hue": 147, "lightness": 0.675, "prefix": "G"}, {"code": "G225", "name": "G225", "hex": "#60AF7E", "family": "green", "value": "dark", "tags": ["earthy", "fresh"], "hue": 143, "lightness": 0.531, "prefix": "G"}, {"code": "G303", "name": "G303", "hex": "#7AEC9A", "family": "green", "value": "mid", "tags": ["bright", "earthy", "fresh"], "hue": 137, "lightness": 0.702, "prefix": "G"}, {"code": "G318", "name": "G318", "hex": "#49C592", "family": "green", "value": "dark", "tags": ["earthy", "fresh"], "hue": 155, "lightness": 0.529, "prefix": "G"}, {"code": "G326", "name": "G326", "hex": "#609E84", "family": "green", "value": "dark", "tags": ["earthy"], "hue": 155, "lightness": 0.498, "prefix": "G"}, {"code": "G335", "name": "G335", "hex": "#528968", "family": "green", "value": "dark", "tags": ["earthy"], "hue": 144, "lightness": 0.429, "prefix": "G"}, {"code": "G401", "name": "G401", "hex": "#ECFEB9", "family": "green", "value": "light", "tags": ["bright", "fresh", "pastel"], "hue": 76, "lightness": 0.861, "prefix": "G"}, {"code": "G402", "name": "G402", "hex": "#E5FEAC", "family": "green", "value": "light", "tags": ["bright", "fresh", "pastel"], "hue": 78, "lightness": 0.835, "prefix": "G"}, {"code": "G406", "name": "G406", "hex": "#54C564", "family": "green", "value": "mid", "tags": ["earthy", "fresh"], "hue": 128, "lightness": 0.551, "prefix": "G"}, {"code": "G413", "name": "G413", "hex": "#73C667", "family": "green", "value": "mid", "tags": ["earthy", "fresh"], "hue": 112, "lightness": 0.59, "prefix": "G"}, {"code": "G503", "name": "G503", "hex": "#88DE66", "family": "green", "value": "mid", "tags": ["bright", "earthy", "fresh"], "hue": 103, "lightness": 0.635, "prefix": "G"}, {"code": "G515", "name": "G515", "hex": "#68B140", "family": "green", "value": "dark", "tags": ["earthy", "fresh"], "hue": 99, "lightness": 0.473, "prefix": "G"}, {"code": "G523", "name": "G523", "hex": "#749C66", "family": "green", "value": "dark", "tags": ["earthy"], "hue": 104, "lightness": 0.506, "prefix": "G"}, {"code": "G532", "name": "G532", "hex": "#768A6B", "family": "green", "value": "dark", "tags": ["earthy"], "hue": 99, "lightness": 0.48, "prefix": "G"}, {"code": "G554", "name": "G554", "hex": "#62715A", "family": "green", "value": "dark", "tags": ["earthy"], "hue": 99, "lightness": 0.398, "prefix": "G"}, {"code": "G604", "name": "G604", "hex": "#ABE744", "family": "green", "value": "mid", "tags": ["bright", "earthy", "fresh"], "hue": 82, "lightness": 0.586, "prefix": "G"}, {"code": "G606", "name": "G606", "hex": "#83D42C", "family": "green", "value": "dark", "tags": ["bright", "earthy", "fresh"], "hue": 89, "lightness": 0.502, "prefix": "G"}, {"code": "G611", "name": "G611", "hex": "#B7CA80", "family": "green", "value": "mid", "tags": ["earthy", "fresh"], "hue": 75, "lightness": 0.647, "prefix": "G"}, {"code": "G615", "name": "G615", "hex": "#90CC37", "family": "green", "value": "dark", "tags": ["earthy", "fresh"], "hue": 84, "lightness": 0.508, "prefix": "G"}, {"code": "G702", "name": "G702", "hex": "#FFFE93", "family": "yellow", "value": "light", "tags": ["bright"], "hue": 59, "lightness": 0.788, "prefix": "G"}, {"code": "G715", "name": "G715", "hex": "#9DC013", "family": "yellow", "value": "dark", "tags": ["bright"], "hue": 72, "lightness": 0.414, "prefix": "G"}, {"code": "G726", "name": "G726", "hex": "#7D982C", "family": "green", "value": "dark", "tags": ["earthy", "fresh"], "hue": 75, "lightness": 0.384, "prefix": "G"}, {"code": "G743", "name": "G743", "hex": "#686C47", "family": "yellow", "value": "dark", "tags": [], "hue": 66, "lightness": 0.351, "prefix": "G"}, {"code": "G762", "name": "G762", "hex": "#54544B", "family": "yellow", "value": "dark", "tags": [], "hue": 60, "lightness": 0.312, "prefix": "G"}, {"code": "G804", "name": "G804", "hex": "#C5ED13", "family": "yellow", "value": "dark", "tags": ["bright"], "hue": 71, "lightness": 0.502, "prefix": "G"}, {"code": "G822", "name": "G822", "hex": "#858F55", "family": "yellow", "value": "dark", "tags": [], "hue": 70, "lightness": 0.447, "prefix": "G"}, {"code": "G825", "name": "G825", "hex": "#859621", "family": "yellow", "value": "dark", "tags": ["bright"], "hue": 69, "lightness": 0.359, "prefix": "G"}, {"code": "G832", "name": "G832", "hex": "#747D52", "family": "yellow", "value": "dark", "tags": [], "hue": 73, "lightness": 0.406, "prefix": "G"}, {"code": "G902", "name": "G902", "hex": "#FCF955", "family": "yellow", "value": "mid", "tags": ["bright"], "hue": 59, "lightness": 0.661, "prefix": "G"}, {"code": "G910", "name": "G910", "hex": "#F5EAB0", "family": "yellow", "value": "light", "tags": ["bright", "pastel"], "hue": 50, "lightness": 0.825, "prefix": "G"}, {"code": "G915", "name": "G915", "hex": "#BCC71B", "family": "yellow", "value": "dark", "tags": ["bright"], "hue": 64, "lightness": 0.443, "prefix": "G"}, {"code": "G923", "name": "G923", "hex": "#A1A53D", "family": "yellow", "value": "dark", "tags": [], "hue": 62, "lightness": 0.443, "prefix": "G"}, {"code": "G965", "name": "G965", "hex": "#6C6951", "family": "yellow", "value": "dark", "tags": [], "hue": 53, "lightness": 0.371, "prefix": "G"}, {"code": "GG01", "name": "GG01", "hex": "#F9FAF6", "family": "gray", "value": "light", "tags": ["muted", "pastel"], "hue": 75, "lightness": 0.973, "prefix": "GG"}, {"code": "GG03", "name": "GG03", "hex": "#AEBABF", "family": "gray", "value": "mid", "tags": ["muted"], "hue": 198, "lightness": 0.716, "prefix": "GG"}, {"code": "GG05", "name": "GG05", "hex": "#727C82", "family": "gray", "value": "dark", "tags": ["muted"], "hue": 202, "lightness": 0.478, "prefix": "GG"}, {"code": "GG07", "name": "GG07", "hex": "#6A7278", "family": "gray", "value": "dark", "tags": ["muted"], "hue": 206, "lightness": 0.443, "prefix": "GG"}, {"code": "GG09", "name": "GG09", "hex": "#4F5055", "family": "gray", "value": "dark", "tags": ["muted"], "hue": 230, "lightness": 0.322, "prefix": "GG"}, {"code": "NG02", "name": "NG02", "hex": "#EEEFF1", "family": "gray", "value": "light", "tags": ["muted", "pastel"], "hue": 220, "lightness": 0.939, "prefix": "NG"}, {"code": "NG03", "name": "NG03", "hex": "#A6A7AC", "family": "gray", "value": "mid", "tags": ["muted"], "hue": 230, "lightness": 0.663, "prefix": "NG"}, {"code": "R000", "name": "R000", "hex": "#FDDBAA", "family": "peach", "value": "light", "tags": ["bright", "pastel", "skin", "soft", "warm"], "hue": 35, "lightness": 0.829, "prefix": "R"}, {"code": "R025", "name": "R025", "hex": "#974F4A", "family": "red", "value": "dark", "tags": ["warm"], "hue": 4, "lightness": 0.441, "prefix": "R"}, {"code": "R043", "name": "R043", "hex": "#794E4E", "family": "red", "value": "dark", "tags": ["warm"], "hue": 0, "lightness": 0.39, "prefix": "R"}, {"code": "R100", "name": "R100", "hex": "#FDD69F", "family": "peach", "value": "light", "tags": ["bright", "skin", "soft", "warm"], "hue": 35, "lightness": 0.808, "prefix": "R"}, {"code": "R101", "name": "R101", "hex": "#FEB460", "family": "peach", "value": "mid", "tags": ["bright", "warm"], "hue": 32, "lightness": 0.686, "prefix": "R"}, {"code": "R105", "name": "R105", "hex": "#FD504E", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 1, "lightness": 0.649, "prefix": "R"}, {"code": "R107", "name": "R107", "hex": "#FD3435", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 360, "lightness": 0.598, "prefix": "R"}, {"code": "R123", "name": "R123", "hex": "#BA685D", "family": "red", "value": "dark", "tags": ["warm"], "hue": 7, "lightness": 0.547, "prefix": "R"}, {"code": "R126", "name": "R126", "hex": "#944846", "family": "red", "value": "dark", "tags": ["warm"], "hue": 2, "lightness": 0.427, "prefix": "R"}, {"code": "R152", "name": "R152", "hex": "#634F4C", "family": "red", "value": "dark", "tags": ["warm"], "hue": 8, "lightness": 0.343, "prefix": "R"}, {"code": "R213", "name": "R213", "hex": "#FE7876", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 1, "lightness": 0.729, "prefix": "R"}, {"code": "R218", "name": "R218", "hex": "#DE6760", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 3, "lightness": 0.624, "prefix": "R"}, {"code": "R222", "name": "R222", "hex": "#CC9076", "family": "peach", "value": "mid", "tags": ["warm"], "hue": 18, "lightness": 0.631, "prefix": "R"}, {"code": "R254", "name": "R254", "hex": "#A47A74", "family": "red", "value": "dark", "tags": ["skin", "soft", "warm"], "hue": 8, "lightness": 0.549, "prefix": "R"}, {"code": "R301", "name": "R301", "hex": "#FEAF78", "family": "peach", "value": "mid", "tags": ["bright", "warm"], "hue": 25, "lightness": 0.733, "prefix": "R"}, {"code": "R302", "name": "R302", "hex": "#FEA08C", "family": "red", "value": "mid", "tags": ["bright", "skin", "soft", "warm"], "hue": 11, "lightness": 0.773, "prefix": "R"}, {"code": "R304", "name": "R304", "hex": "#FE7C90", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 351, "lightness": 0.741, "prefix": "R"}, {"code": "R317", "name": "R317", "hex": "#FE5350", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 1, "lightness": 0.655, "prefix": "R"}, {"code": "R323", "name": "R323", "hex": "#DF8582", "family": "red", "value": "mid", "tags": ["warm"], "hue": 2, "lightness": 0.692, "prefix": "R"}, {"code": "R338", "name": "R338", "hex": "#B5706E", "family": "red", "value": "mid", "tags": ["warm"], "hue": 2, "lightness": 0.571, "prefix": "R"}, {"code": "R400", "name": "R400", "hex": "#FEDDAE", "family": "peach", "value": "light", "tags": ["bright", "pastel", "skin", "soft", "warm"], "hue": 35, "lightness": 0.839, "prefix": "R"}, {"code": "R403", "name": "R403", "hex": "#FE88A4", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 346, "lightness": 0.765, "prefix": "R"}, {"code": "R416", "name": "R416", "hex": "#FC496A", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 349, "lightness": 0.637, "prefix": "R"}, {"code": "R427", "name": "R427", "hex": "#B2636A", "family": "red", "value": "dark", "tags": ["warm"], "hue": 355, "lightness": 0.543, "prefix": "R"}, {"code": "R501", "name": "R501", "hex": "#FEC8A6", "family": "peach", "value": "light", "tags": ["bright", "pastel", "skin", "soft", "warm"], "hue": 23, "lightness": 0.824, "prefix": "R"}, {"code": "R502", "name": "R502", "hex": "#FEA19F", "family": "red", "value": "light", "tags": ["bright", "skin", "soft", "warm"], "hue": 1, "lightness": 0.81, "prefix": "R"}, {"code": "R503", "name": "R503", "hex": "#FE7DB8", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 333, "lightness": 0.743, "prefix": "R"}, {"code": "R543", "name": "R543", "hex": "#937577", "family": "red", "value": "dark", "tags": ["warm"], "hue": 356, "lightness": 0.518, "prefix": "R"}, {"code": "R605", "name": "R605", "hex": "#FE729D", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 342, "lightness": 0.722, "prefix": "R"}, {"code": "R607", "name": "R607", "hex": "#FE4E8D", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 339, "lightness": 0.651, "prefix": "R"}, {"code": "R614", "name": "R614", "hex": "#E585AA", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 337, "lightness": 0.71, "prefix": "R"}, {"code": "R623", "name": "R623", "hex": "#B58298", "family": "red", "value": "mid", "tags": ["warm"], "hue": 334, "lightness": 0.61, "prefix": "R"}, {"code": "R702", "name": "R702", "hex": "#E1B7E5", "family": "red", "value": "light", "tags": ["warm"], "hue": 295, "lightness": 0.808, "prefix": "R"}, {"code": "R703", "name": "R703", "hex": "#E2AFFE", "family": "red", "value": "light", "tags": ["bright", "pastel", "warm"], "hue": 279, "lightness": 0.841, "prefix": "R"}, {"code": "R705", "name": "R705", "hex": "#F659AA", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 329, "lightness": 0.657, "prefix": "R"}, {"code": "R706", "name": "R706", "hex": "#BF6198", "family": "red", "value": "mid", "tags": ["warm"], "hue": 325, "lightness": 0.565, "prefix": "R"}, {"code": "R752", "name": "R752", "hex": "#8C8290", "family": "red", "value": "dark", "tags": ["warm"], "hue": 283, "lightness": 0.537, "prefix": "R"}, {"code": "R802", "name": "R802", "hex": "#C0B6FD", "family": "pink", "value": "light", "tags": ["bright", "floral", "pastel", "warm"], "hue": 248, "lightness": 0.853, "prefix": "R"}, {"code": "R823", "name": "R823", "hex": "#DB8DC7", "family": "red", "value": "mid", "tags": ["warm"], "hue": 315, "lightness": 0.706, "prefix": "R"}, {"code": "R826", "name": "R826", "hex": "#7D78E2", "family": "pink", "value": "mid", "tags": ["bright", "floral", "warm"], "hue": 243, "lightness": 0.678, "prefix": "R"}, {"code": "R839", "name": "R839", "hex": "#6F64BF", "family": "pink", "value": "mid", "tags": ["floral", "warm"], "hue": 247, "lightness": 0.571, "prefix": "R"}, {"code": "R903", "name": "R903", "hex": "#B2B7FD", "family": "pink", "value": "light", "tags": ["bright", "floral", "pastel", "warm"], "hue": 236, "lightness": 0.845, "prefix": "R"}, {"code": "R913", "name": "R913", "hex": "#8E9EE3", "family": "pink", "value": "mid", "tags": ["floral", "warm"], "hue": 229, "lightness": 0.724, "prefix": "R"}, {"code": "R916", "name": "R916", "hex": "#6A77C8", "family": "pink", "value": "mid", "tags": ["floral", "warm"], "hue": 232, "lightness": 0.6, "prefix": "R"}, {"code": "R923", "name": "R923", "hex": "#8588B2", "family": "pink", "value": "mid", "tags": ["warm"], "hue": 236, "lightness": 0.61, "prefix": "R"}, {"code": "R926", "name": "R926", "hex": "#657FC2", "family": "pink", "value": "mid", "tags": ["floral", "warm"], "hue": 223, "lightness": 0.578, "prefix": "R"}, {"code": "WG00", "name": "WG00", "hex": "#FEEAAE", "family": "gray", "value": "light", "tags": ["bright", "muted", "pastel", "skin", "soft", "warm"], "hue": 45, "lightness": 0.839, "prefix": "WG"}, {"code": "WG01", "name": "WG01", "hex": "#FDEFD3", "family": "gray", "value": "light", "tags": ["bright", "muted", "pastel", "skin", "soft", "warm"], "hue": 40, "lightness": 0.91, "prefix": "WG"}, {"code": "WG02", "name": "WG02", "hex": "#FBFAF4", "family": "gray", "value": "light", "tags": ["muted", "pastel", "warm"], "hue": 51, "lightness": 0.971, "prefix": "WG"}, {"code": "WG03", "name": "WG03", "hex": "#D7CEC3", "family": "gray", "value": "light", "tags": ["muted", "warm"], "hue": 33, "lightness": 0.804, "prefix": "WG"}, {"code": "WG04", "name": "WG04", "hex": "#C9BFB8", "family": "gray", "value": "mid", "tags": ["muted", "warm"], "hue": 25, "lightness": 0.755, "prefix": "WG"}, {"code": "WG05", "name": "WG05", "hex": "#A19994", "family": "gray", "value": "mid", "tags": ["muted", "warm"], "hue": 23, "lightness": 0.606, "prefix": "WG"}, {"code": "WG06", "name": "WG06", "hex": "#918783", "family": "gray", "value": "dark", "tags": ["muted", "warm"], "hue": 17, "lightness": 0.541, "prefix": "WG"}, {"code": "WG07", "name": "WG07", "hex": "#938B86", "family": "gray", "value": "mid", "tags": ["muted", "warm"], "hue": 23, "lightness": 0.551, "prefix": "WG"}, {"code": "WG08", "name": "WG08", "hex": "#7C746F", "family": "gray", "value": "dark", "tags": ["muted", "warm"], "hue": 23, "lightness": 0.461, "prefix": "WG"}, {"code": "WG09", "name": "WG09", "hex": "#78726F", "family": "gray", "value": "dark", "tags": ["muted", "warm"], "hue": 20, "lightness": 0.453, "prefix": "WG"}, {"code": "Y000", "name": "Y000", "hex": "#FDED95", "family": "yellow", "value": "light", "tags": ["bright", "warm"], "hue": 51, "lightness": 0.788, "prefix": "Y"}, {"code": "Y003", "name": "Y003", "hex": "#FCEA18", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 55, "lightness": 0.541, "prefix": "Y"}, {"code": "Y025", "name": "Y025", "hex": "#B3A91C", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 56, "lightness": 0.406, "prefix": "Y"}, {"code": "Y102", "name": "Y102", "hex": "#FDEB13", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 55, "lightness": 0.533, "prefix": "Y"}, {"code": "Y107", "name": "Y107", "hex": "#FDE208", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 53, "lightness": 0.512, "prefix": "Y"}, {"code": "Y114", "name": "Y114", "hex": "#EAD307", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 54, "lightness": 0.473, "prefix": "Y"}, {"code": "Y202", "name": "Y202", "hex": "#FEF78F", "family": "yellow", "value": "mid", "tags": ["bright", "warm"], "hue": 56, "lightness": 0.778, "prefix": "Y"}, {"code": "Y204", "name": "Y204", "hex": "#FDD30B", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 50, "lightness": 0.518, "prefix": "Y"}, {"code": "Y211", "name": "Y211", "hex": "#FBD269", "family": "yellow", "value": "mid", "tags": ["bright", "warm"], "hue": 43, "lightness": 0.698, "prefix": "Y"}, {"code": "Y216", "name": "Y216", "hex": "#FCC00B", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 45, "lightness": 0.516, "prefix": "Y"}, {"code": "Y222", "name": "Y222", "hex": "#C6B061", "family": "yellow", "value": "mid", "tags": ["warm"], "hue": 47, "lightness": 0.578, "prefix": "Y"}, {"code": "Y225", "name": "Y225", "hex": "#C49D25", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 45, "lightness": 0.457, "prefix": "Y"}, {"code": "Y234", "name": "Y234", "hex": "#B59B47", "family": "yellow", "value": "dark", "tags": ["warm"], "hue": 46, "lightness": 0.494, "prefix": "Y"}, {"code": "Y314", "name": "Y314", "hex": "#FEB405", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 42, "lightness": 0.508, "prefix": "Y"}, {"code": "Y315", "name": "Y315", "hex": "#FEB605", "family": "yellow", "value": "dark", "tags": ["bright", "warm"], "hue": 43, "lightness": 0.508, "prefix": "Y"}, {"code": "Y325", "name": "Y325", "hex": "#D7970A", "family": "orange", "value": "dark", "tags": ["bright", "warm"], "hue": 41, "lightness": 0.441, "prefix": "Y"}, {"code": "Y332", "name": "Y332", "hex": "#A18859", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 39, "lightness": 0.49, "prefix": "Y"}, {"code": "Y337", "name": "Y337", "hex": "#B88A2E", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 40, "lightness": 0.451, "prefix": "Y"}, {"code": "Y400", "name": "Y400", "hex": "#FEE18D", "family": "yellow", "value": "mid", "tags": ["bright", "warm"], "hue": 45, "lightness": 0.775, "prefix": "Y"}, {"code": "Y411", "name": "Y411", "hex": "#FECA4D", "family": "yellow", "value": "mid", "tags": ["bright", "warm"], "hue": 42, "lightness": 0.649, "prefix": "Y"}, {"code": "Y416", "name": "Y416", "hex": "#FD8509", "family": "orange", "value": "dark", "tags": ["bright", "warm"], "hue": 30, "lightness": 0.514, "prefix": "Y"}, {"code": "Y423", "name": "Y423", "hex": "#D2902A", "family": "orange", "value": "dark", "tags": ["bright", "warm"], "hue": 36, "lightness": 0.494, "prefix": "Y"}, {"code": "Y501", "name": "Y501", "hex": "#FDCD59", "family": "yellow", "value": "mid", "tags": ["bright", "skin", "soft", "warm"], "hue": 42, "lightness": 0.671, "prefix": "Y"}, {"code": "Y503", "name": "Y503", "hex": "#FD9250", "family": "orange", "value": "mid", "tags": ["bright", "warm"], "hue": 23, "lightness": 0.653, "prefix": "Y"}, {"code": "Y505", "name": "Y505", "hex": "#FE7A02", "family": "orange", "value": "dark", "tags": ["bright", "warm"], "hue": 29, "lightness": 0.502, "prefix": "Y"}, {"code": "Y512", "name": "Y512", "hex": "#FEAB04", "family": "orange", "value": "dark", "tags": ["bright", "warm"], "hue": 40, "lightness": 0.506, "prefix": "Y"}, {"code": "Y529", "name": "Y529", "hex": "#D17319", "family": "orange", "value": "dark", "tags": ["bright", "warm"], "hue": 29, "lightness": 0.459, "prefix": "Y"}, {"code": "Y543", "name": "Y543", "hex": "#B67843", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 28, "lightness": 0.488, "prefix": "Y"}, {"code": "Y552", "name": "Y552", "hex": "#7D6D55", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 36, "lightness": 0.412, "prefix": "Y"}, {"code": "Y608", "name": "Y608", "hex": "#FD4927", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 10, "lightness": 0.573, "prefix": "Y"}, {"code": "Y611", "name": "Y611", "hex": "#FDB139", "family": "orange", "value": "mid", "tags": ["bright", "warm"], "hue": 37, "lightness": 0.608, "prefix": "Y"}, {"code": "Y623", "name": "Y623", "hex": "#D08028", "family": "orange", "value": "dark", "tags": ["bright", "warm"], "hue": 31, "lightness": 0.486, "prefix": "Y"}, {"code": "Y648", "name": "Y648", "hex": "#9C6742", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 25, "lightness": 0.435, "prefix": "Y"}, {"code": "Y701", "name": "Y701", "hex": "#FEBD42", "family": "orange", "value": "mid", "tags": ["bright", "skin", "soft", "warm"], "hue": 39, "lightness": 0.627, "prefix": "Y"}, {"code": "Y702", "name": "Y702", "hex": "#FEE7D7", "family": "orange", "value": "light", "tags": ["bright", "pastel", "skin", "soft", "warm"], "hue": 25, "lightness": 0.92, "prefix": "Y"}, {"code": "Y703", "name": "Y703", "hex": "#FEB7A9", "family": "red", "value": "light", "tags": ["bright", "pastel", "skin", "soft", "warm"], "hue": 10, "lightness": 0.829, "prefix": "Y"}, {"code": "Y710", "name": "Y710", "hex": "#EBCD95", "family": "orange", "value": "mid", "tags": ["bright", "skin", "soft", "warm"], "hue": 39, "lightness": 0.753, "prefix": "Y"}, {"code": "Y713", "name": "Y713", "hex": "#FD8E26", "family": "orange", "value": "mid", "tags": ["bright", "warm"], "hue": 29, "lightness": 0.571, "prefix": "Y"}, {"code": "Y762", "name": "Y762", "hex": "#716559", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 30, "lightness": 0.396, "prefix": "Y"}, {"code": "Y811", "name": "Y811", "hex": "#FDB456", "family": "orange", "value": "mid", "tags": ["bright", "warm"], "hue": 34, "lightness": 0.665, "prefix": "Y"}, {"code": "Y812", "name": "Y812", "hex": "#FC9824", "family": "orange", "value": "mid", "tags": ["bright", "warm"], "hue": 32, "lightness": 0.565, "prefix": "Y"}, {"code": "Y823", "name": "Y823", "hex": "#CA7845", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 23, "lightness": 0.531, "prefix": "Y"}, {"code": "Y826", "name": "Y826", "hex": "#D47F4D", "family": "orange", "value": "mid", "tags": ["warm"], "hue": 22, "lightness": 0.567, "prefix": "Y"}, {"code": "Y900", "name": "Y900", "hex": "#FCDDA8", "family": "orange", "value": "light", "tags": ["bright", "pastel", "skin", "soft", "warm"], "hue": 38, "lightness": 0.824, "prefix": "Y"}, {"code": "Y903", "name": "Y903", "hex": "#FBB19B", "family": "red", "value": "light", "tags": ["bright", "warm"], "hue": 14, "lightness": 0.796, "prefix": "Y"}, {"code": "Y906", "name": "Y906", "hex": "#F98F79", "family": "red", "value": "mid", "tags": ["bright", "warm"], "hue": 10, "lightness": 0.725, "prefix": "Y"}, {"code": "Y914", "name": "Y914", "hex": "#E89B70", "family": "orange", "value": "mid", "tags": ["bright", "warm"], "hue": 21, "lightness": 0.675, "prefix": "Y"}, {"code": "Y932", "name": "Y932", "hex": "#AB8470", "family": "orange", "value": "mid", "tags": ["warm"], "hue": 20, "lightness": 0.555, "prefix": "Y"}, {"code": "Y934", "name": "Y934", "hex": "#BB7853", "family": "orange", "value": "dark", "tags": ["warm"], "hue": 21, "lightness": 0.529, "prefix": "Y"}, {"code": "Y976", "name": "Y976", "hex": "#5A504C", "family": "red", "value": "dark", "tags": ["warm"], "hue": 17, "lightness": 0.325, "prefix": "Y"}];
+const paletteEl = document.getElementById("palette");
+const libraryEl = document.getElementById("library");
+const blendGridEl = document.getElementById("blendGrid");
+const statusEl = document.getElementById("status");
+const familyEl = document.getElementById("family");
+const searchEl = document.getElementById("search");
+const favoritesGridEl = document.getElementById("favoritesGrid");
+const skinPaletteEl = document.getElementById("skinPalette");
+document.getElementById("count").textContent = MARKERS.length;
+
+let currentPalette = [];
+let lockedCodes = new Set();
+
+const families = Array.from(new Set(MARKERS.map(m => m.family))).sort();
+families.forEach(f => {
+  const opt = document.createElement("option");
+  opt.value = f;
+  opt.textContent = f.charAt(0).toUpperCase() + f.slice(1);
+  familyEl.appendChild(opt);
+});
+
+function shuffle(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function getByCode(code) {
+  return MARKERS.find(m => m.code === code);
+}
+
+function hueDistance(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return Math.min(d, 360 - d);
+}
+
+function libraryMatches(m) {
+  const q = (searchEl.value || "").trim().toUpperCase();
+  if (!q) return true;
+  return (
+    m.code.toUpperCase().includes(q) ||
+    (m.family || "").toUpperCase().includes(q) ||
+    (m.hex || "").toUpperCase().includes(q)
+  );
+}
+
+
+function favoriteStorageKey() {
+  return "caliartFavoritePalettesV7";
+}
+
+function getFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem(favoriteStorageKey()) || "[]");
+  } catch (e) {
+    return [];
+  }
+}
+
+function setFavorites(items) {
+  try {
+    localStorage.setItem(favoriteStorageKey(), JSON.stringify(items));
+  } catch (e) {}
+}
+
+function saveCurrentPalette() {
+  if (!currentPalette.length) {
+    statusEl.textContent = "Generate a palette first.";
+    return;
+  }
+  const favorites = getFavorites();
+  const codes = currentPalette.map(m => m.code);
+  if (favorites.some(f => JSON.stringify(f.codes) === JSON.stringify(codes))) {
+    statusEl.textContent = "That palette is already saved.";
+    return;
+  }
+  favorites.unshift({
+    name: "Palette " + (favorites.length + 1),
+    codes: codes
+  });
+  setFavorites(favorites);
+  renderFavorites();
+  statusEl.textContent = "Saved current palette.";
+}
+
+function deleteFavorite(index) {
+  const favorites = getFavorites();
+  favorites.splice(index, 1);
+  setFavorites(favorites);
+  renderFavorites();
+  statusEl.textContent = "Deleted saved palette.";
+}
+
+function loadFavorite(index) {
+  const favorites = getFavorites();
+  const fav = favorites[index];
+  if (!fav) return;
+  const palette = fav.codes.map(getByCode).filter(Boolean);
+  renderPalette(palette);
+  statusEl.textContent = "Loaded saved palette.";
+}
+
+function renderFavorites() {
+  if (!favoritesGridEl) return;
+  favoritesGridEl.innerHTML = "";
+  const favorites = getFavorites();
+  if (!favorites.length) {
+    favoritesGridEl.innerHTML = "<p>No saved palettes yet.</p>";
+    return;
+  }
+  favorites.forEach((fav, index) => {
+    const markers = fav.codes.map(getByCode).filter(Boolean);
+    const card = document.createElement("div");
+    card.className = "favorite-card";
+    card.innerHTML =
+      '<div class="favorite-swatches">' +
+      markers.map(m => '<div class="favorite-swatch" style="background:' + m.hex + '"></div>').join('') +
+      '</div>' +
+      '<div class="favorite-meta">' +
+      '<div class="code">' + (fav.name || ('Palette ' + (index + 1))) + '</div>' +
+      '<div class="tiny">' + fav.codes.join(", ") + '</div>' +
+      '<div class="inline-actions">' +
+      '<button class="smallbtn" type="button" data-load="' + index + '">Load</button>' +
+      '<button class="smallbtn" type="button" data-delete="' + index + '">Delete</button>' +
+      '</div>' +
+      '</div>';
+    favoritesGridEl.appendChild(card);
+  });
+
+  favoritesGridEl.querySelectorAll("[data-load]").forEach(btn => {
+    btn.addEventListener("click", function() {
+      loadFavorite(parseInt(this.getAttribute("data-load"), 10));
+    });
+  });
+  favoritesGridEl.querySelectorAll("[data-delete]").forEach(btn => {
+    btn.addEventListener("click", function() {
+      deleteFavorite(parseInt(this.getAttribute("data-delete"), 10));
+    });
+  });
+}
+
+function randomChoice(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function closestByLightness(items, target, usedCodes) {
+  const pool = items.filter(m => !usedCodes.has(m.code));
+  if (!pool.length) return null;
+  return pool.slice().sort((a,b) => Math.abs(a.lightness - target) - Math.abs(b.lightness - target))[0];
+}
+
+function renderSkinPalette(items) {
+  if (!skinPaletteEl) return;
+  skinPaletteEl.innerHTML = "";
+  if (!items.length) {
+    skinPaletteEl.innerHTML = "<p>No skin-tone set found for those settings yet.</p>";
+    return;
+  }
+  const labels = ["Highlight","Base","Blush","Shadow","Deep shadow"];
+  items.forEach((m, idx) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      '<div class="swatch" style="background:' + m.hex + ';"></div>' +
+      '<div class="meta">' +
+      '<div class="code">' + m.code + '</div>' +
+      '<div class="tiny">' + labels[idx] + '</div>' +
+      '<div class="tiny">' + m.family + ' · ' + m.value + ' · ' + m.hex + '</div>' +
+      '</div>';
+    skinPaletteEl.appendChild(card);
+  });
+}
+
+function generateSkinPalette() {
+  const depth = document.getElementById("skinDepth").value;
+  const undertone = document.getElementById("skinUndertone").value;
+
+  let pool = MARKERS.filter(m =>
+    m.tags.includes("skin") || m.family === "peach" || m.family === "brown" || m.family === "red" || m.family === "yellow"
+  );
+
+  const depthTargets = {
+    fair:   {highlight:0.92, base:0.84, blush:0.74, shadow:0.64, deep:0.54},
+    light:  {highlight:0.88, base:0.78, blush:0.70, shadow:0.60, deep:0.50},
+    medium: {highlight:0.80, base:0.69, blush:0.62, shadow:0.52, deep:0.42},
+    tan:    {highlight:0.72, base:0.61, blush:0.55, shadow:0.45, deep:0.35},
+    deep:   {highlight:0.62, base:0.51, blush:0.47, shadow:0.37, deep:0.28}
+  };
+
+  const warmFamilies = new Set(["peach","yellow","orange","brown","red"]);
+  const coolFamilies = new Set(["pink","purple","red"]);
+  const neutralFamilies = new Set(["peach","brown","red","gray"]);
+
+  if (undertone === "warm") {
+    pool = pool.filter(m => warmFamilies.has(m.family) || m.tags.includes("warm"));
+  } else if (undertone === "cool") {
+    pool = pool.filter(m => coolFamilies.has(m.family) || m.tags.includes("cool") || m.family === "pink");
+  } else {
+    pool = pool.filter(m => neutralFamilies.has(m.family) || m.tags.includes("muted") || m.tags.includes("skin"));
+  }
+
+  // Prefer portrait-ish colors over bright outliers
+  pool = pool.filter(m => !m.tags.includes("bright") || m.tags.includes("skin") || m.value !== "light");
+
+  const targets = depthTargets[depth];
+  const used = new Set();
+
+  let highlight = closestByLightness(pool.filter(m => m.tags.includes("skin") || m.family === "peach" || m.family === "yellow"), targets.highlight, used);
+  if (highlight) used.add(highlight.code);
+
+  let base = closestByLightness(pool.filter(m => m.family === "peach" || m.family === "brown" || m.tags.includes("skin")), targets.base, used);
+  if (base) used.add(base.code);
+
+  let blushPool = pool.filter(m => m.family === "red" || m.family === "pink" || m.family === "peach");
+  if (undertone === "cool") blushPool = blushPool.filter(m => m.family === "pink" || m.family === "red");
+  let blush = closestByLightness(blushPool, targets.blush, used);
+  if (blush) used.add(blush.code);
+
+  let shadow = closestByLightness(pool.filter(m => m.family === "brown" || m.family === "peach" || m.family === "gray" || m.family === "red"), targets.shadow, used);
+  if (shadow) used.add(shadow.code);
+
+  let deepShadow = closestByLightness(pool.filter(m => m.family === "brown" || m.family === "gray" || m.family === "red"), targets.deep, used);
+
+  const result = [highlight, base, blush, shadow, deepShadow].filter(Boolean);
+  renderSkinPalette(result);
+  statusEl.textContent = "Generated a " + depth + " " + undertone + " skin-tone set.";
+}
+
+
+function renderLibrary() {
+  libraryEl.innerHTML = "";
+  MARKERS.filter(libraryMatches).forEach(m => {
+    const card = document.createElement("div");
+    card.className = "card mini";
+    card.innerHTML =
+      '<div class="swatch" style="background:' + m.hex + ';"></div>' +
+      '<div class="meta">' +
+      '<div class="code">' + m.code + '</div>' +
+      '<div class="tiny">' + m.family + ' · ' + m.value + '</div>' +
+      '</div>';
+    libraryEl.appendChild(card);
+  });
+}
+
+function modeFiltered(pool) {
+  const mode = document.getElementById("mode").value;
+  const modeTags = {
+    soft: ["soft", "pastel"],
+    earthy: ["earthy", "muted"],
+    bright: ["bright"],
+    skin: ["skin"],
+    cool: ["cool"],
+    warm: ["warm"]
+  };
+  if (mode === "random") return pool;
+  const wanted = modeTags[mode];
+  return pool.filter(m => m.tags.some(tag => wanted.includes(tag)));
+}
+
+function baseFilteredPool() {
+  const family = document.getElementById("family").value;
+  const value = document.getElementById("value").value;
+  let pool = MARKERS.slice();
+  if (family !== "all") pool = pool.filter(m => m.family === family);
+  if (value !== "all") pool = pool.filter(m => m.value === value);
+  pool = modeFiltered(pool);
+  return pool;
+}
+
+function harmonyPick(pool, size, harmony, anchors) {
+  if (harmony === "any") return shuffle(pool).slice(0, size);
+  const locked = anchors.slice();
+  let base = locked[0] || shuffle(pool)[0];
+  if (!base) return [];
+  let candidates = pool.filter(m => !locked.some(l => l.code === m.code) && m.code !== base.code);
+
+  function pickByTargets(targets, tolerance) {
+    let result = locked.slice();
+    if (!result.some(m => m.code === base.code)) result.unshift(base);
+    const used = new Set(result.map(m => m.code));
+
+    targets.forEach(target => {
+      const matches = shuffle(candidates.filter(m => !used.has(m.code) && hueDistance(m.hue, target) <= tolerance));
+      if (matches[0] && result.length < size) {
+        result.push(matches[0]);
+        used.add(matches[0].code);
+      }
+    });
+
+    const leftovers = shuffle(pool.filter(m => !used.has(m.code)));
+    while (result.length < size && leftovers.length) result.push(leftovers.shift());
+    return result.slice(0, size);
+  }
+
+  if (harmony === "analogous") return pickByTargets([base.hue + 18, base.hue - 18, base.hue + 30, base.hue - 30], 20);
+  if (harmony === "complementary") return pickByTargets([base.hue + 180, base.hue + 165, base.hue - 165], 28);
+  if (harmony === "triadic") return pickByTargets([base.hue + 120, base.hue - 120, base.hue + 110, base.hue - 110], 28);
+  return shuffle(pool).slice(0, size);
+}
+
+function renderPalette(items) {
+  currentPalette = items.slice();
+  paletteEl.innerHTML = "";
+  if (!items.length) {
+    paletteEl.innerHTML = "<p>No markers match that combination yet.</p>";
+    return;
+  }
+  items.forEach(m => {
+    const isLocked = lockedCodes.has(m.code);
+    const card = document.createElement("div");
+    card.className = "card" + (isLocked ? " locked" : "");
+    card.innerHTML =
+      '<div class="swatch" style="background:' + m.hex + ';"></div>' +
+      '<div class="meta">' +
+      '<div class="code-row"><div class="code">' + m.code + '</div><button class="lockbtn" type="button" data-code="' + m.code + '">' + (isLocked ? 'Unlock' : 'Lock') + '</button></div>' +
+      '<div class="tiny">' + m.family + ' · ' + m.value + ' · ' + m.hex + '</div>' +
+      '<div class="chips">' + m.tags.map(t => '<span class="chip">' + t + '</span>').join('') + '</div>' +
+      '</div>';
+    paletteEl.appendChild(card);
+  });
+
+  paletteEl.querySelectorAll(".lockbtn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      const code = this.getAttribute("data-code");
+      if (lockedCodes.has(code)) lockedCodes.delete(code);
+      else lockedCodes.add(code);
+      renderPalette(currentPalette);
+      statusEl.textContent = "Locked " + lockedCodes.size + " marker(s).";
+    });
+  });
+}
+
+function generatePalette() {
+  const size = parseInt(document.getElementById("size").value, 10);
+  const harmony = document.getElementById("harmony").value;
+  let pool = baseFilteredPool();
+  const locked = Array.from(lockedCodes).map(getByCode).filter(Boolean);
+
+  if (!pool.length && !locked.length) {
+    statusEl.textContent = "No markers match those filters.";
+    renderPalette([]);
+    return;
+  }
+
+  let available = pool.slice();
+  locked.forEach(m => {
+    if (!available.some(x => x.code === m.code)) available.push(m);
+  });
+
+  let picked = harmonyPick(available, size, harmony, locked);
+  const lockedSet = new Set(locked.map(m => m.code));
+  picked = locked.concat(picked.filter(m => !lockedSet.has(m.code))).slice(0, size);
+
+  renderPalette(picked);
+  statusEl.textContent = "Generated " + picked.length + " color(s). Locked: " + locked.length + ". Matching pool: " + pool.length + ".";
+}
+
+function buildBlendTrios(sourcePool) {
+  const pool = sourcePool.slice().sort((a,b) => a.lightness - b.lightness);
+  const groups = {};
+  pool.forEach(m => {
+    const bucketHue = Math.round(m.hue / 18) * 18;
+    const key = m.prefix + "|" + m.family + "|" + bucketHue;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  });
+
+  const trios = [];
+  Object.values(groups).forEach(group => {
+    const light = group.filter(m => m.value === "light").sort((a,b) => b.lightness - a.lightness);
+    const mid = group.filter(m => m.value === "mid").sort((a,b) => b.lightness - a.lightness);
+    const dark = group.filter(m => m.value === "dark").sort((a,b) => b.lightness - a.lightness);
+
+    if (light.length && mid.length && dark.length) {
+      let trio = [light[0], mid[0], dark[0]];
+      // prefer hue continuity
+      const score =
+        hueDistance(trio[0].hue, trio[1].hue) +
+        hueDistance(trio[1].hue, trio[2].hue) +
+        Math.abs(trio[0].lightness - trio[1].lightness) * 100 +
+        Math.abs(trio[1].lightness - trio[2].lightness) * 100;
+      trios.push({
+        trio,
+        key: trio.map(t => t.code).join("-"),
+        score,
+        label: trio[0].family
+      });
+    }
+  });
+
+  trios.sort((a,b) => a.score - b.score);
+
+  // de-dupe by code overlap so suggestions feel different
+  const used = new Set();
+  const result = [];
+  trios.forEach(item => {
+    if (result.length >= 6) return;
+    const overlap = item.trio.some(m => used.has(m.code));
+    if (!overlap) {
+      result.push(item);
+      item.trio.forEach(m => used.add(m.code));
+    }
+  });
+
+  // fallback from current palette if the filtered pool is too narrow
+  if (!result.length && currentPalette.length >= 3) {
+    const sorted = currentPalette.slice().sort((a,b) => b.lightness - a.lightness);
+    result.push({ trio: [sorted[0], sorted[Math.floor(sorted.length/2)], sorted[sorted.length-1]], key: "palette-fallback", label: "current palette" });
+  }
+
+  return result;
+}
+
+function renderBlendTrios() {
+  blendGridEl.innerHTML = "";
+  const sourcePool = baseFilteredPool();
+  const trios = buildBlendTrios(sourcePool);
+
+  if (!trios.length) {
+    blendGridEl.innerHTML = "<p>No solid blend trios found for the current filters yet. Try loosening family/value filters.</p>";
+    return;
+  }
+
+  trios.forEach(item => {
+    const [a,b,c] = item.trio;
+    const card = document.createElement("div");
+    card.className = "trio";
+    card.innerHTML =
+      '<div class="trio-swatches">' +
+        '<div class="trio-swatch" style="background:' + a.hex + '"><div class="trio-label">' + a.code + '</div></div>' +
+        '<div class="trio-swatch" style="background:' + b.hex + '"><div class="trio-label">' + b.code + '</div></div>' +
+        '<div class="trio-swatch" style="background:' + c.hex + '"><div class="trio-label">' + c.code + '</div></div>' +
+      '</div>' +
+      '<div class="trio-meta">' +
+        '<div class="code">' + a.code + ' → ' + b.code + ' → ' + c.code + '</div>' +
+        '<div class="tiny">' + (item.label || a.family) + ' blend trio · light → mid → shadow</div>' +
+        '<div class="tiny">' + a.hex + ' · ' + b.hex + ' · ' + c.hex + '</div>' +
+      '</div>';
+    blendGridEl.appendChild(card);
+  });
+}
+
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      statusEl.textContent = "Copied to clipboard.";
+    }).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const area = document.createElement("textarea");
+  area.value = text;
+  document.body.appendChild(area);
+  area.select();
+  try {
+    document.execCommand("copy");
+    statusEl.textContent = "Copied to clipboard.";
+  } catch (e) {
+    statusEl.textContent = "Couldn’t copy automatically on this device.";
+  }
+  document.body.removeChild(area);
+}
+
+function paletteCodes() {
+  return currentPalette.map(m => m.code).join(", ");
+}
+
+function paletteFull() {
+  return currentPalette.map(m => m.code + " " + m.hex).join("\n");
+}
+
+function bind(id, event, handler) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, handler);
+}
+
+bind("generateBtn", "click", () => {
+  generatePalette();
+  renderBlendTrios();
+});
+bind("blendBtn", "click", renderBlendTrios);
+bind("clearBtn", "click", () => {
+  if (searchEl) searchEl.value = "";
+  renderLibrary();
+});
+bind("clearLocksBtn", "click", () => {
+  lockedCodes.clear();
+  renderPalette(currentPalette);
+  statusEl.textContent = "Cleared locked markers.";
+});
+bind("copyCodesBtn", "click", () => copyText(paletteCodes()));
+bind("copyFullBtn", "click", () => copyText(paletteFull()));
+bind("savePaletteBtn", "click", saveCurrentPalette);
+bind("saveCurrentBtn", "click", saveCurrentPalette);
+bind("clearFavoritesBtn", "click", () => {
+  localStorage.removeItem(favoriteStorageKey());
+  renderFavorites();
+  statusEl.textContent = "Cleared saved palettes.";
+});
+bind("skinBtn", "click", generateSkinPalette);
+bind("generateSkinBtn", "click", generateSkinPalette);
+bind("downloadTxtBtn", "click", () => {
+  const blob = new Blob([paletteFull()], {type:"text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "caliart-palette.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+  statusEl.textContent = "Downloaded palette text file.";
+});
+if (searchEl) searchEl.addEventListener("input", renderLibrary);
+
+renderLibrary();
+renderFavorites();
+generatePalette();
+renderBlendTrios();
+generateSkinPalette();
+</script>
+</body>
+</html>
